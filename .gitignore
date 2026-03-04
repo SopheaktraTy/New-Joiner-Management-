@@ -1,0 +1,60 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Node
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+
+# Vite / React
+apps/web/.vite/
+**/.vite/
+
+# Cache
+.cache/
+**/.cache/
+.tmp/
+**/.tmp/
+
+# # Env files (do not commit secrets or machine paths)
+# .env
+# .env.*
+# !.env.example
+# !.env.sample
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Coverage
+coverage/
+**/coverage/
+
+# Access / Office database & temp lock files
+*.accdb
+*.mdb
+*.ldb
+*.laccdb
+
+# Optional: if you ever export or store backups
+*.bak
+*.tmp
