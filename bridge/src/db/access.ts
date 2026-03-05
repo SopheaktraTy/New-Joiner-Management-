@@ -1,29 +1,46 @@
-import odbc from "odbc";
+import * as odbc from "odbc";           // Namespace import = more reliable TS typings
+import type { Connection } from "odbc"; // Type-only import (no runtime output)
 
-function getConnectionString() {
+/** Build MS Access ODBC connection string from .env **/
+function getConnectionString(): string {
     const driver = process.env.ODBC_DRIVER;
     const dbPath = process.env.ACCDB_PATH;
 
-    if (!driver) throw new Error("ODBC_DRIVER is missing");
-    if (!dbPath) throw new Error("ACCDB_PATH is missing");
+    // Fail fast if env vars are missing
+    if (!driver) throw new Error("ODBC_DRIVER is missing in .env");
+    if (!dbPath) throw new Error("ACCDB_PATH is missing in .env");
 
-    // Note: Dbq= must be an absolute path on Windows
+    // Access ODBC expects: Driver={...};Dbq=full_path_to_accdb;
     return `Driver={${driver}};Dbq=${dbPath};`;
 }
 
-export async function withDb<T>(fn: (conn: odbc.Connection) => Promise<T>) {
+/**Runs a DB callback with an open ODBC connection, then closes it.**/
+export async function withDb<T>(fn: (conn: Connection) => Promise<T>): Promise<T> {
     const connStr = getConnectionString();
-    const conn = await odbc.connect(connStr);
+
     try {
-        return await fn(conn);
-    } finally {
-        await conn.close();
+        const conn = await odbc.connect(connStr); // open connection
+        try {
+            return await fn(conn);                  // run caller's DB work
+        } finally {
+            await conn.close();                     // always close / release lock
+        }
+    } catch (error: any) {
+        // Helpful logging for debugging ODBC failures
+        console.error("--- ODBC CONNECTION ERROR ---");
+        console.error("Message:", error.message);
+        if (error.odbcErrors) {
+            console.error("Details:", JSON.stringify(error.odbcErrors, null, 2));
+        }
+        console.error("-----------------------------");
+        throw error; // rethrow so API/controller can handle it
     }
 }
 
-export async function testDbConnection() {
+/** Quick health check: if this query works, DB connection is OK */
+export async function testDbConnection(): Promise<boolean> {
     return withDb(async (conn) => {
-        await conn.query("SELECT 1");
+        await conn.query("SELECT TOP 1 id FROM NewJoiners");
         return true;
     });
 }
